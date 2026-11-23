@@ -190,6 +190,10 @@ static void SwitchBleOff();
 ///                                  advertised.
 static void UpdateAdvertiseSamplesEnable(bool isAdvertiseSamplesEnabled);
 
+/// Restart a running advertisement every
+/// APP_DEFINE_ADVERTISE_REFRESH_INTERVAL_S seconds
+static void RefreshAdvertisingIfDue();
+
 /// Struct to store all user defined information for BLE operations
 static BleTypes_ApplicationContext_t gBleApplicationContext = {
     .advertisementData = &gCompleteAdvData,
@@ -469,6 +473,8 @@ static bool BleDefaultStateCb(Message_Message_t* message) {
           sensorMsg->data.measurement.temperatureTicks;
       gCompleteAdvData.humidityTicks =
           sensorMsg->data.measurement.humidityTicks;
+
+      RefreshAdvertisingIfDue();
 
       /// this does not change the advertisement mode
       /// If the device is idle (e.g. a previous start failed) this
@@ -826,6 +832,18 @@ static void UpdateDeviceSettingCharacteristics(Message_Message_t* message) {
   UpdateAdvertiseSamplesEnable(settings->isAdvertiseDataEnabled);
   DeviceSettingsService_UpdateAlternativeDeviceName(settings->deviceName);
   DeviceSettingsService_UpdateIsLogEnabled(settings->isLogEnabled);
+}
+
+static void RefreshAdvertisingIfDue() {
+#if APP_DEFINE_ADVERTISE_REFRESH_INTERVAL_S > 0
+  static uint64_t lastRefreshS = 0;
+  uint64_t nowS = gBleApplicationContext.timeRunningSeconds;
+  if (nowS - lastRefreshS < APP_DEFINE_ADVERTISE_REFRESH_INTERVAL_S) {
+    return;
+  }
+  lastRefreshS = nowS;
+  BleGap_AdvertiseRefresh(&gBleApplicationContext);
+#endif
 }
 
 static void SwitchBleOff() {

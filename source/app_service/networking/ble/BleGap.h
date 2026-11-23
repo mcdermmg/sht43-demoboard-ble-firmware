@@ -60,4 +60,10 @@ void BleGap_AdvertiseRequest(BleTypes_ApplicationContext_t* applicationContext,
 /// @param applicationContext Ble application context
 void BleGap_AdvertiseCancel(BleTypes_ApplicationContext_t* applicationContext);
 
+/// Stop and restart a running advertisement with the current mode.
+/// Does nothing if the device is not advertising (e.g. connected or radio
+/// switched off by the user).
+/// @param applicationContext Ble application context
+void BleGap_AdvertiseRefresh(BleTypes_ApplicationContext_t* applicationContext);
+
 #endif  // BLEGAP_H

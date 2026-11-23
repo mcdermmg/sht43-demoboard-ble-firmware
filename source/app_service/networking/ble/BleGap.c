@@ -191,6 +191,19 @@ void BleGap_AdvertiseRequest(BleTypes_ApplicationContext_t* applicationContext,
   // NOLINTEND(clang-analyzer-deadcode.DeadStores)
 }
 
+void BleGap_AdvertiseRefresh(
+    BleTypes_ApplicationContext_t* applicationContext) {
+  if (applicationContext->deviceConnectionStatus != BLE_INTERFACE_ADVERTISING) {
+    return;
+  }
+  // Stop regardless of the result: if the controller had silently stopped
+  // advertising this call fails, which is exactly the case we recover from.
+  aci_gap_set_non_discoverable();
+  applicationContext->deviceConnectionStatus = BLE_INTERFACE_IDLE;
+  BleGap_AdvertiseRequest(applicationContext,
+                          applicationContext->currentAdvertisementMode);
+}
+
 static tBleStatus StartAdvertising(BleTypes_AdvertisementMode_t mode) {
   // evaluate advertisement mode
   uint8_t advertisementType =

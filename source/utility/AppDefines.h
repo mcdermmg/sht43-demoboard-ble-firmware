@@ -88,6 +88,11 @@
 /// by the user (long button press). Set to 0 for the stock behaviour.
 #define APP_DEFINE_KEEP_BLE_ON_LOW_BATTERY 1
 
+/// Interval in seconds after which a running advertisement is stopped and
+/// started again. This recovers from the radio having stopped advertising
+/// without the application noticing. Set to 0 to disable.
+#define APP_DEFINE_ADVERTISE_REFRESH_INTERVAL_S 600
+
 /// Count the number of elements in an array
 #define COUNT_OF(arr) (sizeof(arr) / sizeof((arr)[0]))
 
