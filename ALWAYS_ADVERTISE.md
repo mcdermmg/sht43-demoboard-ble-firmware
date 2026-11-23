@@ -52,7 +52,16 @@ Output: `build/release/SHT43_DB-1_0_1-develop-alwayson.{hex,bin}`.
 
 ## Flash
 
-The app is linked at 0x08007000 (OTA loader below it); the .hex carries the
-address. Program with STM32CubeProgrammer over SWD (see README, *Setup wired
-connection*). Built against the same CPU2 wireless stack as stock 1.0.x
+Two routes:
+
+- **Over Bluetooth, no programmer:** the board boots through Sensirion's OTA
+  loader. Pair from a phone, write the reboot request, then upload the `.bin`
+  from a laptop with `tools/ota/sht43_ota.py`. Step by step:
+  [tools/ota/README.md](tools/ota/README.md). Untested on hardware.
+- **SWD:** program the `.hex` (it carries the 0x08007000 address) with
+  STM32CubeProgrammer, or with OpenOCD and a Raspberry Pi Pico running
+  debugprobe (wire NRST and use `connect_assert_srst`). Never mass-erase: the
+  OTA loader lives at 0x08000000.
+
+Built against the same CPU2 wireless stack as stock 1.0.x
 (BLE full stack 1.20.x); a board running 1.0.x already has it.
