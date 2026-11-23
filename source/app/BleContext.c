@@ -547,11 +547,13 @@ static bool BleDefaultStateCb(Message_Message_t* message) {
 static bool BleDisabledStateCb(Message_Message_t* message) {
   if (message->header.category == MESSAGE_BROKER_CATEGORY_BUTTON_EVENT &&
       message->header.id == BUTTON_EVENT_LONG_PRESS) {
+#if !APP_DEFINE_KEEP_BLE_ON_LOW_BATTERY
     // in case the battery is very low we don't enable the radio again!
     if (gBleApplicationContext.currentApplicationState ==
         BATTERY_MONITOR_APP_STATE_CRITICAL_BATTERY_LEVEL) {
       return true;
     }
+#endif
     if (gBleApplicationContext.currentApplicationState ==
         BATTERY_MONITOR_APP_STATE_REDUCED_OPERATION) {
       // remember the choice of the user to force
@@ -640,6 +642,7 @@ static bool ForwardToBleAppCb(Message_Message_t* message) {
         return true;
       }
       gBleApplicationContext.currentApplicationState = batteryMsg->currentState;
+#if !APP_DEFINE_KEEP_BLE_ON_LOW_BATTERY
       // switch the radio off in case the battery is low and the user did
       // not yet decide to use it anyway
       if (gBleApplicationContext.currentApplicationState >
@@ -654,6 +657,7 @@ static bool ForwardToBleAppCb(Message_Message_t* message) {
           BleInterface_PublishBleMessage((Message_Message_t*)&newMsg);
         }
       }
+#endif
       return true;
     }
     if (message->header.id == BATTERY_MONITOR_MESSAGE_ID_CAPACITY_CHANGE) {

@@ -79,6 +79,15 @@
 /// The values are defined in AN5270.pdf
 #define BLE_TX_POWER 0x19
 
+// Always-advertise options (not part of the Sensirion release)
+
+/// Keep the BLE radio on regardless of the battery level.
+/// The stock firmware switches the radio off when the battery drops below
+/// ~2.75 V (REDUCED_OPERATION) and refuses to switch it on again below
+/// ~2.5 V (CRITICAL). With this set to 1 the radio is only ever switched off
+/// by the user (long button press). Set to 0 for the stock behaviour.
+#define APP_DEFINE_KEEP_BLE_ON_LOW_BATTERY 1
+
 /// Count the number of elements in an array
 #define COUNT_OF(arr) (sizeof(arr) / sizeof((arr)[0]))
 
