@@ -1,5 +1,31 @@
 # SHT43 DemoBoard Firmware
 
+> **Fork note: always-advertise variant.** This branch keeps the board
+> advertising temperature/RH indefinitely. It removes the low-battery radio
+> cut-off, fixes an advertising-state bug, restarts advertising
+> periodically, and adds a watchdog. See [ALWAYS_ADVERTISE.md](ALWAYS_ADVERTISE.md)
+> for the changes and
+> [documentation/always_advertise_investigation.md](documentation/always_advertise_investigation.md)
+> for the root-cause analysis.
+>
+> **Flashing without a programmer** (untested on hardware). Full steps and
+> troubleshooting: [tools/ota/README.md](tools/ota/README.md).
+>
+> 1. Phone (nRF Connect): close MyAmbience and connect to `SHT43 DB`.
+> 2. Pair: read Device Information → **Firmware Revision String**. Accept
+>    the 6-digit code on the phone, then press the board's button within
+>    30 s.
+> 3. Write `010713` (write without response) to characteristic
+>    `0000fe11-8e22-4541-9d4c-21edae82ed19`. The display goes blank and the
+>    board advertises as `SHT43_OTA`.
+> 4. Laptop, with the phone's Bluetooth off:
+>    `pip install bleak`, then
+>    `python3 tools/ota/sht43_ota.py SHT43_DB-1_0_1-develop-alwayson.bin`
+>
+> If the upload fails, run step 4 again. Don't remove the battery while the
+> board is in loader mode: that wipes its settings and data log (it can
+> still be flashed afterwards).
+
 The SHT43 Demo Board is a new Sensirion device to demonstrate an application of the Sensirion SHT43 humidity and temperature sensor. It is battery powered and able to communicate with other devices over Bluetooth Low Energy. The board has an [STM32WB55xx](https://www.st.com/en/microcontrollers-microprocessors/stm32wb55rg.html) dual core low power wireless device from ST on it.
 
 The firmware in this repository provides an application for this board that integrates with the Sensirion MyAmbiance app
