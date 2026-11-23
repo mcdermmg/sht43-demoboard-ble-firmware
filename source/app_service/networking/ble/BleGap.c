@@ -63,6 +63,11 @@ static AdvertiseInterval_t _advertiseIntervalSpec[] = {
     [ADVERTISEMENT_INTERVAL_SHORT] = {.min = SHORT_ADVERTISE_INTERVAL_MIN,
                                       .max = SHORT_ADVERTISE_INTERVAL_MAX}};
 
+/// Issue the aci command to start advertising with the given mode
+/// @param mode The mode how to advertise
+/// @return status of the aci command
+static tBleStatus StartAdvertising(BleTypes_AdvertisementMode_t mode);
+
 void BleGap_Init(BleTypes_ApplicationContext_t* bleApplicationContext) {
   // NOLINTBEGIN(clang-analyzer-deadcode.DeadStores)
   uint8_t role = GAP_PERIPHERAL_ROLE;
@@ -153,22 +158,26 @@ void BleGap_AdvertiseRequest(BleTypes_ApplicationContext_t* applicationContext,
   }
 
   if (applicationContext->deviceConnectionStatus == BLE_INTERFACE_IDLE) {
-    applicationContext->deviceConnectionStatus = BLE_INTERFACE_ADVERTISING;
+    // Remember the requested mode even if the start fails, so that a retry
+    // uses the latest requested interval.
+    applicationContext->currentAdvertisementMode = mode;
 
-    // evaluate advertisement mode
-    uint8_t advertisementType =
-        mode.advertiseModeSpecification.connectable ? ADV_IND : ADV_NONCONN_IND;
-    uint16_t minInterval =
-        _advertiseIntervalSpec[mode.advertiseModeSpecification.interval].min;
-    uint16_t maxInterval =
-        _advertiseIntervalSpec[mode.advertiseModeSpecification.interval].max;
+    ret = StartAdvertising(mode);
+    if (ret != BLE_STATUS_SUCCESS) {
+      // The controller may still be advertising although we believe it is
+      // not. Stop it and try once more.
+      aci_gap_set_non_discoverable();
+      ret = StartAdvertising(mode);
+    }
+    LOG_DEBUG_CALLSTATUS("aci_gap_set_discoverable()", ret);
 
-    // Start Fast or Low Power Advertising
-    ret = aci_gap_set_discoverable(advertisementType, minInterval, maxInterval,
-                                   CFG_BLE_ADDRESS_TYPE, ADV_FILTER, 0, 0, 0, 0,
-                                   0, 0);
+    // Only switch to the advertising state if the controller accepted the
+    // request. The stock firmware set the state before the call; a single
+    // failed start then left the device believing it was advertising while
+    // it was silent, with nothing to ever retry. Staying idle means the next
+    // request (at the latest with the next sensor reading) tries again.
     if (ret == BLE_STATUS_SUCCESS) {
-      applicationContext->currentAdvertisementMode = mode;
+      applicationContext->deviceConnectionStatus = BLE_INTERFACE_ADVERTISING;
     }
   }
 
@@ -180,6 +189,21 @@ void BleGap_AdvertiseRequest(BleTypes_ApplicationContext_t* applicationContext,
     LOG_DEBUG_CALLSTATUS("aci_gap_update_adv_data()", ret);
   }
   // NOLINTEND(clang-analyzer-deadcode.DeadStores)
+}
+
+static tBleStatus StartAdvertising(BleTypes_AdvertisementMode_t mode) {
+  // evaluate advertisement mode
+  uint8_t advertisementType =
+      mode.advertiseModeSpecification.connectable ? ADV_IND : ADV_NONCONN_IND;
+  uint16_t minInterval =
+      _advertiseIntervalSpec[mode.advertiseModeSpecification.interval].min;
+  uint16_t maxInterval =
+      _advertiseIntervalSpec[mode.advertiseModeSpecification.interval].max;
+
+  // Start Fast or Low Power Advertising
+  return aci_gap_set_discoverable(advertisementType, minInterval, maxInterval,
+                                  CFG_BLE_ADDRESS_TYPE, ADV_FILTER, 0, 0, 0, 0,
+                                  0, 0);
 }
 
 void BleGap_AdvertiseCancel(BleTypes_ApplicationContext_t* applicationContext) {

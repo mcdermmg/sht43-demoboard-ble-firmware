@@ -469,8 +469,10 @@ static bool BleDefaultStateCb(Message_Message_t* message) {
           sensorMsg->data.measurement.temperatureTicks;
       gCompleteAdvData.humidityTicks =
           sensorMsg->data.measurement.humidityTicks;
-      /// this does not change the advertisement mode
 
+      /// this does not change the advertisement mode
+      /// If the device is idle (e.g. a previous start failed) this
+      /// (re)starts advertising.
       BleGap_AdvertiseRequest(&gBleApplicationContext,
                               gBleApplicationContext.currentAdvertisementMode);
 
