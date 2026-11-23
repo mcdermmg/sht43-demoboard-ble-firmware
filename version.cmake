@@ -32,3 +32,7 @@ add_compile_definitions(FUS_VERSION_PATCH=${FUS_FW_VERSION_PATCH})
 if ("${APPLICATION_FW_DEVELOP_FLAG}" EQUAL 1)
     set(APPLICATION_FW_SUFFIX "-develop")
 endif ()
+
+# Always-advertise variant (battery cut-off removed, advertising self-heal,
+# watchdog); see source/utility/AppDefines.h
+set(APPLICATION_FW_SUFFIX "${APPLICATION_FW_SUFFIX}-alwayson")
