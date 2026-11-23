@@ -93,6 +93,13 @@
 /// without the application noticing. Set to 0 to disable.
 #define APP_DEFINE_ADVERTISE_REFRESH_INTERVAL_S 600
 
+/// Enable the independent watchdog (~32 s timeout). It is reloaded on every
+/// application time tick. If the application hangs (hard fault, deadlock,
+/// unrecoverable error) the device resets and starts advertising again
+/// instead of waiting for the battery to be re-inserted.
+/// Set to 0 to disable.
+#define APP_DEFINE_WATCHDOG_ENABLED 1
+
 /// Count the number of elements in an array
 #define COUNT_OF(arr) (sizeof(arr) / sizeof((arr)[0]))
 

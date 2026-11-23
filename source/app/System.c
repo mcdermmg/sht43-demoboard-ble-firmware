@@ -63,6 +63,7 @@
 #include "hal/Qspi.h"
 #include "hal/Rtc.h"
 #include "hal/Uart.h"
+#include "hal/Watchdog.h"
 #include "math.h"
 #include "stdarg.h"
 #include "stm32_lpm.h"
@@ -103,6 +104,19 @@ static void RunAppMessageDispatch();
 /// could be avoided
 static void RunBleMessageDispatch();
 
+/// Reload the watchdog on every application time tick.
+///
+/// The tick is published from the RTC timer and dispatched by the
+/// application message broker, so a reload proves that both are alive.
+/// @param message received message
+/// @return false; the message is left for the other listeners
+static bool WatchdogTimeTickCb(Message_Message_t* message);
+
+/// Listener that reloads the watchdog
+static MessageListener_Listener_t _watchdogListener = {
+    .currentMessageHandlerCb = WatchdogTimeTickCb,
+    .receiveMask = MESSAGE_BROKER_CATEGORY_TIME_INFORMATION};
+
 /// instance of application message broker
 static MessageBus_t _appMessageBroker = {
     .taskFunction = RunAppMessageDispatch,
@@ -120,11 +134,11 @@ void System_Init(void) {
   // This is the first thing to do since errors are also propagated as
   // messages
   InitMessageBroker(
-      &_appMessageBroker, 8, SysTest_TestControllerInstance(),
+      &_appMessageBroker, 9, SysTest_TestControllerInstance(),
       BatteryMonitor_Instance(), SensorController_Sht4xControllerInstance(),
       BleContext_BridgeInstance(), Presentation_ControllerInstance(),
       ItemStore_ListenerInstance(), MeasurementItemController_Instance(),
-      SettingsController_Instance());
+      SettingsController_Instance(), &_watchdogListener);
 
   InitMessageBroker(&_bleMessageBroker, 1, BleContext_Instance());
 
@@ -178,6 +192,10 @@ void System_Init(void) {
   HAL_DBGMCU_DisableDBGStandbyMode();
 #endif
 
+#if APP_DEFINE_WATCHDOG_ENABLED
+  Watchdog_Start();
+#endif
+
   RunSystem();
 }
 
@@ -221,6 +239,15 @@ static void RunAppMessageDispatch() {
 
 static void RunBleMessageDispatch() {
   MessageBroker_Run(&_bleMessageBroker.broker);
+}
+
+static bool WatchdogTimeTickCb(Message_Message_t* message) {
+#if APP_DEFINE_WATCHDOG_ENABLED
+  if (message->header.id == MESSAGE_ID_TIME_INFO_TIME_ELAPSED) {
+    Watchdog_Kick();
+  }
+#endif
+  return false;
 }
 
 void Message_PublishAppMessage(Message_Message_t* message) {
